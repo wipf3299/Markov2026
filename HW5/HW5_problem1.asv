@@ -1,0 +1,84 @@
+%% Part b
+clear;
+
+% Calculated P matrix:
+P = [  0,    1,    0,    0,    0;
+     1/4,    0,  3/4,    0,    0;
+       0,  2/4,    0,  2/4,    0;
+       0,    0,  3/4,    0,  1/4;
+       0,    0,    0,    1,    0 ];
+
+% q0 = diroc0:
+q0 = [1, 0, 0, 0, 0];
+
+% Report q50 and q51:
+q50 = q0 * (P^50)
+q51 = q0 * (P^51)
+
+% Calculate and Plot qn(2) and qn(4)
+n = 0:60;
+qn_2 = zeros(1, 61);
+qn_4 = zeros(1, 61);
+
+for i = 1:61
+    qn = q0 * (P^(i-1));
+    qn_2(i) = qn(3); % State k=2 is column 3
+    qn_4(i) = qn(5); % State k=4 is column 5
+end
+
+% Running average of qk(2):
+running_avg = cumsum(qn_2) ./ (n + 1);
+
+figure('Color', 'k');
+plot(n, qn_2, 'b-o', n, qn_4, 'r-s', n, running_avg, 'w--', 'LineWidth', 1.5);
+grid on;
+xlabel('n'); ylabel('Probability');
+legend('q_n(2)', 'q_n(4)', 'Running Average q_n(2)');
+
+%% Part c
+clc;clear; 
+
+% Transition matrix with self-loops
+a = 0.3; b = 0.1;
+k = 0:4;
+pr = a * (4 - k) / 4;
+pl = b * k / 4;
+ps = 1 - pr - pl;
+
+P = diag(ps) + diag(pr(1:4), 1) + diag(pl(2:5), -1);
+
+% Solve pi * P = pi  =>  (P' - I) * pi' = 0
+A = [P' - eye(5); ones(1, 5)];
+b_vec = [0; 0; 0; 0; 1];
+pi_solve = (A \ b_vec)';
+pi_theory = binopdf(0:4, 4, 0.75);
+
+fprintf('pi (solve):  '); fprintf('%.4f ', pi_solve); fprintf('\n');
+fprintf('pi (theory): '); fprintf('%.4f ', pi_theory); fprintf('\n\n');
+
+% Find convergence step
+q0 = [1, 0, 0, 0, 0];
+qn = q0; 
+n = 0;
+while max(abs(qn - pi_solve)) >= 1e-6
+    n = n + 1;
+    qn = q0 * (P^n);
+end
+fprintf('Smallest n for < 1e-6: %d\n', n);
+
+% Eigenvalue analysis
+eigs_P = sort(abs(eig(P)), 'descend');
+fprintf('Second largest eigenvalue modulus: %.4f\n', eigs_P(2));
+
+% Plot state probabilities
+q_hist = zeros(61, 5);
+for i = 1:61
+    q_hist(i, :) = q0 * (P^(i-1));
+end
+
+figure;
+plot(0:60, q_hist, 'LineWidth', 1.5);
+grid on;
+xlabel('n'); ylabel('q_n(k)');
+title('Convergence of q_n to \pi');
+legend('k=0', 'k=1', 'k=2', 'k=3', 'k=4');
