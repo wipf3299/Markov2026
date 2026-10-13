@@ -17,7 +17,7 @@ end
 clear
 
 %% Part (b)
-m  = 5;
+m  = 4;
 pb = zeros(m, m);
 
 fprintf("For m = %d\n", m)
